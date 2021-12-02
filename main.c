@@ -26,18 +26,16 @@ int main(int argc, char *argv[]) {
     char *cmdline[MAX_CMD_SIZE];
     process_t cmds[MAX_CMD_SIZE];
 
-    //while (1) {
+    while (1) {
         // (ré-)Initialiser les variables/structures
         for (int x = 0; x < MAX_CMD_SIZE; x++) {
             cmdline[x] = (char *) malloc(sizeof(char *) * MAX_LINE_SIZE);
         }
-
         // Affichage d'une invite de commande
         printf("Shell> ");
 
         // Lecture d'une ligne de commandes
         fgets(line, MAX_CMD_SIZE, stdin);
-        printf("LINE : %s", line);
         trim(line);
         //printf("trim : '%s'\n", line);
 
@@ -56,6 +54,10 @@ int main(int argc, char *argv[]) {
         // avec les éventuelles redirections et conditionnements
         // d'exécution.
         launch_cmd(cmds);
-   // }
+
+        memset(line, 0, sizeof(line));
+        memset(cmdline, 0, sizeof(cmdline));
+        memset(cmds, 0, sizeof(cmds));
+   }
     return -1; // Dead code
 }

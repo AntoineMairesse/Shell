@@ -46,6 +46,7 @@ int init_process(process_t *proc) {
     assert(proc != NULL);
     assert(check_zero(proc, sizeof(*proc)) == 0);
     proc->argv = (char **) malloc(sizeof(char **));
+    proc->path = (char *) malloc(sizeof(char) * 1024);
     proc->bg = 0;
     proc->pipe = 0;
     proc->stdin = STDIN_FILENO;
@@ -89,9 +90,11 @@ int launch_cmd(process_t *proc) {
     assert(proc != NULL);
     int i = 0, j = 0;
     while (proc[i].argv != NULL) {
-
         if(strcmp(proc[i].argv[0], "cd") == 0){
             cd(proc[i].argv[1], proc[i].stderr);
+        }
+        else if (strcmp(proc[i].argv[0], "exit") == 0){
+            exit_shell(0, proc[i].stdout);
         }
         else if (proc[i].pipe == 1) {
             int   p[2];
@@ -121,6 +124,7 @@ int launch_cmd(process_t *proc) {
                 }
             }
         } else {
+            builtin(proc + i);
         }
         i++;
     }

@@ -73,8 +73,37 @@ int is_builtin(const char *cmd) {
 
 int builtin(process_t *proc) {
     assert(proc != NULL);
+    if(is_builtin(proc->argv[0])){
+        // Sauvegarde des sorties
+        int saved_stdin = dup(STDIN_FILENO);
+        int saved_stdout = dup(STDOUT_FILENO);
+        int saved_stderr = dup(STDERR_FILENO);
+        int pid = fork();
+        if(pid == 0){
+            //Redirection des sorties
+            dup2(proc->stdin, STDIN_FILENO);
+            dup2(proc->stdout, STDOUT_FILENO);
+            dup2(proc->stderr, STDERR_FILENO);
+            //Execution de la commande
 
-    return -1;
+            execvp(proc->argv[0], proc->argv);
+        }
+
+        //Restauration des sorties
+        dup2(saved_stdin, STDIN_FILENO);
+        close(saved_stdin);
+        dup2(saved_stdout, STDOUT_FILENO);
+        close(saved_stdout);
+        dup2(saved_stderr, STDERR_FILENO);
+        close(saved_stderr);
+
+        if(proc->bg == 0){
+            waitpid(pid, NULL, 0);
+        }
+        return 0;
+    } else {
+        return -1;
+    }
 }
 
 /*
