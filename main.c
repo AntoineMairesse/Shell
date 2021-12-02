@@ -26,10 +26,10 @@ int main(int argc, char *argv[]) {
     char *cmdline[MAX_CMD_SIZE];
     process_t cmds[MAX_CMD_SIZE];
 
-    while (1){
+    //while (1) {
         // (ré-)Initialiser les variables/structures
-        for(int x = 0; x < MAX_CMD_SIZE; x++){
-            cmdline[x] = (char *) malloc(sizeof(char * ) * MAX_LINE_SIZE);
+        for (int x = 0; x < MAX_CMD_SIZE; x++) {
+            cmdline[x] = (char *) malloc(sizeof(char *) * MAX_LINE_SIZE);
         }
 
         // Affichage d'une invite de commande
@@ -37,30 +37,25 @@ int main(int argc, char *argv[]) {
 
         // Lecture d'une ligne de commandes
         fgets(line, MAX_CMD_SIZE, stdin);
+        printf("LINE : %s", line);
         trim(line);
-        printf("trim : '%s'\n", line);
+        //printf("trim : '%s'\n", line);
 
         // "Nettoyage" de la ligne de commandes
         clean(line);
-        printf("clean : '%s'\n", line);
+        //printf("clean : '%s'\n", line);
 
         // Découpage en "tokens"
         tokenize(line, cmdline);
-        int i = 0;
-        while(strcmp(cmdline[i],"")!=0){
-            printf("cmdline[%d] == %s\n", i , cmdline[i]);
-            i++;
-        }
-        int file = open("sortie.txt", O_WRONLY | O_CREAT, 0777);
-        fprintf(stderr, "avant stderr\n");
-        cd("toto", file);
-        fprintf(stderr, "après stderr\n");
+
         // Parsing de la ligne pour remplir les structures
         // de cmds.
+        parse_cmd(cmdline, cmds);
 
         // Lancement des commandes dans l'ordre attendu,
         // avec les éventuelles redirections et conditionnements
         // d'exécution.
-    }
+        launch_cmd(cmds);
+   // }
     return -1; // Dead code
 }

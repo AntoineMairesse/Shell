@@ -14,6 +14,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <unistd.h>
 #include <sys/wait.h>
@@ -22,13 +23,15 @@
 #include "builtin.h"
 
 #ifndef NDEBUG
-int check_zero(void* ptr, size_t size) {
-  int result=0;
-  for (size_t i=0; i<size; ++i) {
-    result+=*((char*) ptr++);
-  }
-  return result;
+
+int check_zero(void *ptr, size_t size) {
+    int result = 0;
+    for (size_t i = 0; i < size; ++i) {
+        result += *((char *) ptr++);
+    }
+    return result;
 }
+
 #endif
 
 /*
@@ -39,10 +42,16 @@ int check_zero(void* ptr, size_t size) {
  
   Retourne 0 ou un code d'erreur.
  */
-int init_process(process_t* proc) {
-  assert(proc!=NULL);
-  assert(check_zero(proc, sizeof(*proc))==0);
-  
+int init_process(process_t *proc) {
+    assert(proc != NULL);
+    assert(check_zero(proc, sizeof(*proc)) == 0);
+    proc->argv = (char **) malloc(sizeof(char **));
+    proc->bg = 0;
+    proc->pipe = 0;
+    proc->stdin = STDIN_FILENO;
+    proc->stderr = STDERR_FILENO;
+    proc->stdout = STDOUT_FILENO;
+    proc->pid = getpid();
 }
 
 /*
@@ -53,9 +62,9 @@ int init_process(process_t* proc) {
  
   Retourne 0 ou un code d'erreur.
  */
-int set_env(process_t* proc) {
-  assert(proc!=NULL);
-  
+int set_env(process_t *proc) {
+    assert(proc != NULL);
+
 }
 
 /*
@@ -76,8 +85,44 @@ int set_env(process_t* proc) {
   Retourne 0 ou un code d'erreur.
   
  */
-int launch_cmd(process_t* proc) {
-  assert(proc!=NULL);
-  
-  
+int launch_cmd(process_t *proc) {
+    assert(proc != NULL);
+    int i = 0, j = 0;
+    while (proc[i].argv != NULL) {
+
+        if(strcmp(proc[i].argv[0], "cd") == 0){
+            cd(proc[i].argv[1], proc[i].stderr);
+        }
+        else if (proc[i].pipe == 1) {
+            int   p[2];
+            pid_t pid;
+            int   fd_in = 0;
+            while(proc[i].argv != NULL){
+                if(proc[i - 1].pipe == 0 && i > 0){
+                    break;
+                }
+                pipe(p);
+                pid = fork();
+                if (pid == 0)
+                {
+                    dup2(fd_in, 0); //change the input according to the old one
+                    if (proc[i + 1].argv != NULL)
+                        dup2(p[1], 1);
+                    close(p[0]);
+                    execvp(proc[i].argv[0], proc[i].argv);
+                    exit(EXIT_FAILURE);
+                }
+                else
+                {
+                    wait(NULL);
+                    close(p[1]);
+                    fd_in = p[0]; //save the input for the next command
+                    i++;
+                }
+            }
+        } else {
+        }
+        i++;
+    }
+
 }

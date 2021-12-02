@@ -23,10 +23,14 @@
 // Effacer un tableau (tout mettre à zéro)
 #define CLEAR(ptr, size) memset((ptr), 0, (size)*sizeof(*ptr))
 
-int trim(char* str);
-int clean(char* str);
-int tokenize(char* str, char* tokens[]);
+int trim(char *str);
 
-int is_reserved(const char* tok);
-int parse_cmd(char* tokens[], process_t* commands);
+int clean(char *str);
+
+int tokenize(char *str, char *tokens[]);
+
+int is_reserved(const char *tok);
+
+int parse_cmd(char *tokens[], process_t *commands);
+
 #endif

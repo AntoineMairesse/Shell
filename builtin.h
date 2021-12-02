@@ -15,10 +15,14 @@
 
 #include "processus.h"
 
-int is_builtin(const char* cmd);
-int builtin(process_t* proc);
+int is_builtin(const char *cmd);
 
-int cd(const char* path, int fderr);
-int export(const char* var, const char* value, int fderr);
+int builtin(process_t *proc);
+
+int cd(const char *path, int fderr);
+
+int export(const char *var, const char *value, int fderr);
+
 int exit_shell(int ret, int fdout);
+
 #endif

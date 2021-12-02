@@ -36,8 +36,8 @@ int trim(char *str) {
         j++;
     }
 
-    while(str[i+j] != '\0'){
-        str[i] = str[i+j];
+    while (str[i + j] != '\0') {
+        str[i] = str[i + j];
         i++;
     }
     str[i] = '\0';
@@ -69,9 +69,8 @@ int trim(char *str) {
 int clean(char *str) {
     assert(str != NULL);
     int i = 0, j = 0;
-    while (str[i])
-    {
-        if (str[i] != ' '){
+    while (str[i]) {
+        if (str[i] != ' ') {
             str[j] = str[i];
             j++;
             i++;
@@ -79,12 +78,13 @@ int clean(char *str) {
             str[j] = str[i];
             j++;
             i++;
-            while(str[i] == ' '){
+            while (str[i] == ' ') {
                 i++;
             }
         }
     }
     str[j] = '\0';
+    return 0;
 }
 
 /*
@@ -101,15 +101,16 @@ int tokenize(char *str, char *tokens[]) {
     assert(str != NULL);
     assert(tokens != NULL);
     int j = 0;
-    const char * separators = " ";
-    char * strToken = strtok(str, separators);
-    while(strToken != NULL){
+    const char *separators = " ";
+    char *strToken = strtok(str, separators);
+    while (strToken != NULL) {
         strcat(tokens[j], strToken);
         j++;
         // On demande le token suivant.
-        strToken = strtok (NULL, separators);
+        strToken = strtok(NULL, separators);
     }
-
+    tokens[j] = NULL;
+    return 0;
 }
 
 /*
@@ -123,9 +124,20 @@ int tokenize(char *str, char *tokens[]) {
  */
 int is_reserved(const char *tok) {
     assert(tok != NULL);
-    char *test[13] = {";", "&", "<", "2>", "||", "&&", "!", ">", ">>", "2>>", ">&2", "2>&1", "|"};
-    for(int x = 0; x < 13; x++){
-        if(strcmp(tok,test[x]) == 0){
+    char *reserved[13] = {";", "&", "<", "2>", "||", "&&", "!", ">", ">>", "2>>", ">&2", "2>&1", "|"};
+    for (int x = 0; x < 13; x++) {
+        if (strcmp(tok, reserved[x]) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int is_background(const char *tok) {
+    assert(tok != NULL);
+    char *background[6] = {"&", "|", "", "", "", ""};
+    for (int x = 0; x < 6; x++) {
+        if (strcmp(tok, background[x]) == 0) {
             return 1;
         }
     }
@@ -155,6 +167,32 @@ int is_reserved(const char *tok) {
 int parse_cmd(char *tokens[], process_t *commands) {
     assert(tokens != NULL);
     assert(commands != NULL);
+    int i = 0, j = 0, y = 0;
+    int pipe_test = 0;
+    int tube[2];
+    init_process(commands);
+    while (tokens[i] != NULL) {
+        if (is_reserved(tokens[i])) {
+            commands[j].argv[y] = NULL;
+            commands[j].path = commands[j].argv[0];
+            if (is_background(tokens[i])) {
+                commands[j].bg = 1;
+                if (strcmp(tokens[i], "|") == 0) {
+                    commands[j].pipe = 1;
+                }
+            } else
+                commands[j].bg = 0;
 
-
+            j++;
+            init_process(commands + j);
+            y = 0;
+        } else {
+            commands[j].argv[y] = tokens[i];
+            y++;
+            commands[j].argv[y] = (char *) malloc(sizeof(char *));
+        }
+        i++;
+    }
+    commands[j].argv[y] = NULL;
+    return 0;
 }

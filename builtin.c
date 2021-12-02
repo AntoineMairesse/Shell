@@ -18,6 +18,7 @@
 #include <stdio.h>
 
 #include <unistd.h>
+#include <sys/fcntl.h>
 
 #include "builtin.h"
 #include "processus.h"
@@ -35,7 +36,24 @@ int is_builtin(const char *cmd) {
     assert(cmd != NULL);
     char test[1024] = "type ";
     strcat(test, cmd);
-    if (system(test) == 0) {
+    int saved_stdout = dup(STDOUT_FILENO);
+    int saved_stderr = dup(STDERR_FILENO);
+
+    int file_null = open("/dev/null", O_WRONLY);
+    //Suppression de l'affichage de "Type ...."
+    dup2(file_null, STDERR_FILENO);
+    dup2(file_null, STDOUT_FILENO);
+    close(file_null);
+
+    int response = system(test);
+
+    //Restauration de la sortie d'erreur & standard
+    dup2(saved_stdout, STDOUT_FILENO);
+    close(saved_stdout);
+    dup2(saved_stderr, STDERR_FILENO);
+    close(saved_stderr);
+
+    if (response == 0) {
         return 1;
     } else {
         return 0;
@@ -73,20 +91,20 @@ int builtin(process_t *proc) {
 int cd(const char *path, int fderr) {
     assert(path != NULL);
     // Sauvegarde de la sortie d'erreur actuelle
-    int saved_stdout = dup(STDERR_FILENO);
+    int saved_stderr = dup(STDERR_FILENO);
 
     //Redirection de la sortie d'erreur actuelle vers fderr
     dup2(fderr, STDERR_FILENO);
     close(fderr);
 
     //Changement du répertoire de travail courant du minishell
-    char cmd[1024] = "cd ";
-    strcat(cmd,path);
-    int response = system(cmd);
-
+    int response = chdir(path);
+    if(response == -1){
+        fprintf(stderr, "Erreur cd %s\n", path);
+    }
     //Restauration de la sortie d'erreur
-    dup2(saved_stdout, STDERR_FILENO);
-    close(saved_stdout);
+    dup2(saved_stderr, STDERR_FILENO);
+    close(saved_stderr);
     return response;
 }
 
@@ -106,17 +124,17 @@ int export(const char *var, const char *value, int fderr) {
     assert(value != NULL);
 
     // Sauvegarde de la sortie d'erreur actuelle
-    int saved_stdout = dup(STDERR_FILENO);
+    int saved_stderr = dup(STDERR_FILENO);
 
     //Redirection de la sortie d'erreur actuelle vers fderr
     dup2(fderr, STDERR_FILENO);
     close(fderr);
 
-    int response = setenv(var,value,0);
+    int response = setenv(var, value, 0);
 
     //Restauration de la sortie d'erreur
-    dup2(saved_stdout, STDERR_FILENO);
-    close(saved_stdout);
+    dup2(saved_stderr, STDERR_FILENO);
+    close(saved_stderr);
 
     return response;
 }
