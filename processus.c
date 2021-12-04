@@ -92,6 +92,10 @@ int launch_cmd(process_t *proc) {
     assert(proc != NULL);
     int i = 0, j = 0;
     while (proc[i].argv != NULL) {
+        /*while(proc[i].argv[j] != NULL){
+            printf("%s : %d\n", proc[i].argv[j], j);
+            j++;
+        }*/
         if (strcmp(proc[i].argv[0], "cd") == 0) {
             cd(proc[i].argv[1], proc[i].stderr);
         } else if (strcmp(proc[i].argv[0], "exit") == 0) {
@@ -123,21 +127,28 @@ int launch_cmd(process_t *proc) {
         } else {
             //printf("zefezezfez : %s\n", proc[i].next_success->argv[0]);
             int res;
+            //printf("test : %s %s : %d\n", proc[i].argv[0], proc[i].argv[1], proc[i].exec_cmd);
             if (proc[i].exec_cmd == 1) {
                 res = builtin(proc + i);
                 if(res == -1 && proc[i].next_failure != NULL){
                     proc[i].next_failure->exec_cmd = 1;
-                    launch_cmd(proc[i].next_failure);
-                    proc[i].next_failure->exec_cmd = 0;
                 }
-                else if(res == 0 && proc[i].next_success != NULL){
+                if(res == 0 && proc[i].next_success != NULL){
                     proc[i].next_success->exec_cmd = 1;
-                    launch_cmd(proc[i].next_success);
-                    proc[i].next_success->exec_cmd = 0;
+                }
+                // Par exemple : blabla || blabla || echo test || blabla || blabla && echo toto
+                // Cette partie sert à mettre exec_cmd = 1 pour "echo toto"
+                else if(res == 0 && proc[i].next_success == NULL){
+                    while(proc[i].next_failure != NULL){
+                        if(proc[i].next_failure->next_success != NULL){
+                            proc[i].next_failure->next_success->exec_cmd = 1;
+                            break;
+                        }
+                        i++;
+                    }
                 }
             }
         }
         i++;
     }
-
 }
