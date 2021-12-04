@@ -49,6 +49,7 @@ int init_process(process_t *proc) {
     proc->path = (char *) malloc(sizeof(char) * 1024);
     proc->bg = 0;
     proc->pipe = 0;
+    proc->exec_cmd = 1;
     proc->stdin = STDIN_FILENO;
     proc->stderr = STDERR_FILENO;
     proc->stdout = STDOUT_FILENO;
@@ -90,33 +91,28 @@ int launch_cmd(process_t *proc) {
     assert(proc != NULL);
     int i = 0, j = 0;
     while (proc[i].argv != NULL) {
-        if(strcmp(proc[i].argv[0], "cd") == 0){
+        if (strcmp(proc[i].argv[0], "cd") == 0) {
             cd(proc[i].argv[1], proc[i].stderr);
-        }
-        else if (strcmp(proc[i].argv[0], "exit") == 0){
+        } else if (strcmp(proc[i].argv[0], "exit") == 0) {
             exit_shell(0, proc[i].stdout);
-        }
-        else if (proc[i].pipe == 1) {
-            int   p[2];
+        } else if (proc[i].pipe == 1) {
+            int p[2];
             pid_t pid;
-            int   fd_in = 0;
-            while(proc[i].argv != NULL){
-                if(proc[i - 1].pipe == 0 && i > 0){
+            int fd_in = 0;
+            while (proc[i].argv != NULL) {
+                if (proc[i - 1].pipe == 0 && i > 0) {
                     break;
                 }
                 pipe(p);
                 pid = fork();
-                if (pid == 0)
-                {
+                if (pid == 0) {
                     dup2(fd_in, 0); //change the input according to the old one
                     if (proc[i + 1].argv != NULL)
                         dup2(p[1], 1);
                     close(p[0]);
                     execvp(proc[i].argv[0], proc[i].argv);
                     exit(EXIT_FAILURE);
-                }
-                else
-                {
+                } else {
                     wait(NULL);
                     close(p[1]);
                     fd_in = p[0]; //save the input for the next command
@@ -124,7 +120,21 @@ int launch_cmd(process_t *proc) {
                 }
             }
         } else {
-            builtin(proc + i);
+            //printf("zefezezfez : %s\n", proc[i].next_success->argv[0]);
+            int res;
+            if (proc[i].exec_cmd == 1) {
+                res = builtin(proc + i);
+                if(res == -1 && proc[i].next_failure != NULL){
+                    proc[i].next_failure->exec_cmd = 1;
+                    launch_cmd(proc[i].next_failure);
+                    proc[i].next_failure->exec_cmd = 0;
+                }
+                else if(res == 0 && proc[i].next_success != NULL){
+                    proc[i].next_success->exec_cmd = 1;
+                    launch_cmd(proc[i].next_success);
+                    proc[i].next_success->exec_cmd = 0;
+                }
+            }
         }
         i++;
     }

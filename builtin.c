@@ -19,6 +19,7 @@
 
 #include <unistd.h>
 #include <sys/fcntl.h>
+#include <signal.h>
 
 #include "builtin.h"
 #include "processus.h"
@@ -73,22 +74,21 @@ int is_builtin(const char *cmd) {
 
 int builtin(process_t *proc) {
     assert(proc != NULL);
-    if(is_builtin(proc->argv[0])){
-        // Sauvegarde des sorties
-        int saved_stdin = dup(STDIN_FILENO);
-        int saved_stdout = dup(STDOUT_FILENO);
-        int saved_stderr = dup(STDERR_FILENO);
-        int pid = fork();
-        if(pid == 0){
-            //Redirection des sorties
-            dup2(proc->stdin, STDIN_FILENO);
-            dup2(proc->stdout, STDOUT_FILENO);
-            dup2(proc->stderr, STDERR_FILENO);
-            //Execution de la commande
+    // Sauvegarde des sorties
+    int saved_stdin = dup(STDIN_FILENO);
+    int saved_stdout = dup(STDOUT_FILENO);
+    int saved_stderr = dup(STDERR_FILENO);
+    int pid = fork();
+    if (pid == 0) {
+        //Redirection des sorties
+        dup2(proc->stdin, STDIN_FILENO);
+        dup2(proc->stdout, STDOUT_FILENO);
+        dup2(proc->stderr, STDERR_FILENO);
+        //Execution de la commande
 
-            execvp(proc->argv[0], proc->argv);
-        }
-
+        execvp(proc->argv[0], proc->argv);
+        exit(-1);
+    } else {
         //Restauration des sorties
         dup2(saved_stdin, STDIN_FILENO);
         close(saved_stdin);
@@ -96,12 +96,13 @@ int builtin(process_t *proc) {
         close(saved_stdout);
         dup2(saved_stderr, STDERR_FILENO);
         close(saved_stderr);
-
-        if(proc->bg == 0){
-            waitpid(pid, NULL, 0);
+        int status;
+        if (proc->bg == 0) {
+            waitpid(pid, &status, WUNTRACED | WCONTINUED);
         }
-        return 0;
-    } else {
+        if(WEXITSTATUS(status) == 0){
+            return 0;
+        }
         return -1;
     }
 }
@@ -128,7 +129,7 @@ int cd(const char *path, int fderr) {
 
     //Changement du répertoire de travail courant du minishell
     int response = chdir(path);
-    if(response == -1){
+    if (response == -1) {
         fprintf(stderr, "Erreur cd %s\n", path);
     }
     //Restauration de la sortie d'erreur

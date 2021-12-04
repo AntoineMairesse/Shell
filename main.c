@@ -58,6 +58,6 @@ int main(int argc, char *argv[]) {
         memset(line, 0, sizeof(line));
         memset(cmdline, 0, sizeof(cmdline));
         memset(cmds, 0, sizeof(cmds));
-   }
+    }
     return -1; // Dead code
 }

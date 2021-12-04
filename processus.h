@@ -23,7 +23,8 @@ typedef struct process_t {
     int fdclose[2]; // Éventuels descripteurs à fermer
     int status; // Status du processus (pour waitpid())
     int bg;  // Lancer la commande en arrière plan ?
-    int pipe;
+    int pipe; // La commande fait partie d'un pipe ?
+    int exec_cmd; //Faut il executer la commande ? (Utile pour && et ||)
     struct process_t *next; // Prochaine commande inconditionnelle
     struct process_t *next_failure; // Prochaine en cas d'échec
     struct process_t *next_success; // Prochaine en cas de succés
