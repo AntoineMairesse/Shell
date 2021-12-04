@@ -25,6 +25,7 @@ typedef struct process_t {
     int bg;  // Lancer la commande en arrière plan ?
     int pipe; // La commande fait partie d'un pipe ?
     int exec_cmd; //Faut il executer la commande ? (Utile pour && et ||)
+    int reverse; //La condition de la commande est elle inversée ? (Utile pour "!")
     struct process_t *next; // Prochaine commande inconditionnelle
     struct process_t *next_failure; // Prochaine en cas d'échec
     struct process_t *next_success; // Prochaine en cas de succés

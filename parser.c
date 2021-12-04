@@ -125,9 +125,9 @@ int tokenize(char *str, char *tokens[]) {
  */
 int is_reserved(const char *tok) {
     assert(tok != NULL);
-    char *reserved[24] = {";", "&", "||", "&&", "!", "|", "<", ">>", ">", "0>", "1>", "2>", "0>>", "1>>", "2>>", ">&0",
+    char *reserved[23] = {";", "&", "||", "&&", "|", "<", ">>", ">", "0>", "1>", "2>", "0>>", "1>>", "2>>", ">&0",
                           ">&1", ">&2", "0>&1", "0>&2", "1>&0", "1>&2", "2>&0", "2>&1"};
-    for (int x = 0; x < 24; x++) {
+    for (int x = 0; x < 23; x++) {
         if (strcmp(tok, reserved[x]) == 0) {
             return 1;
         }
@@ -226,7 +226,8 @@ int parse_cmd(char *tokens[], process_t *commands) {
                 if (strcmp(tokens[i], "|") == 0) {
                     commands[j].pipe = 1;
                 }
-            } else
+            }
+            else
                 commands[j].bg = 0;
 
 
@@ -238,16 +239,26 @@ int parse_cmd(char *tokens[], process_t *commands) {
                 if (strcmp(tokens[i], "||") == 0 || strcmp(tokens[i], "&&") == 0) {
                     commands[j].exec_cmd = 0;
                     if (strcmp(tokens[i], "||") == 0) {
-                        commands[j - 1].next_failure = commands + j;
+                        if(commands[j - 1].reverse == 0)
+                            commands[j - 1].next_failure = commands + j;
+                        else
+                            commands[j - 1].next_success = commands + j;
                     } else if (strcmp(tokens[i], "&&") == 0) {
-                        commands[j - 1].next_success = commands + j;
+                        if(commands[j - 1].reverse == 0)
+                            commands[j - 1].next_success = commands + j;
+                        else
+                            commands[j - 1].next_failure = commands + j;
                     }
                 }
             }
         } else {
-            commands[j].argv[y] = tokens[i];
-            y++;
-            commands[j].argv[y] = (char *) malloc(sizeof(char *));
+            if(strcmp(tokens[i], "!") == 0) {
+                commands[j].reverse = 1;
+            } else {
+                commands[j].argv[y] = tokens[i];
+                y++;
+                commands[j].argv[y] = (char *) malloc(sizeof(char *));
+            }
         }
         if (tokens[i] != NULL)
             i++;

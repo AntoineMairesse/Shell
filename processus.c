@@ -50,6 +50,7 @@ int init_process(process_t *proc) {
     proc->bg = 0;
     proc->pipe = 0;
     proc->exec_cmd = 1;
+    proc->reverse = 0;
     proc->stdin = STDIN_FILENO;
     proc->stderr = STDERR_FILENO;
     proc->stdout = STDOUT_FILENO;
